@@ -18,10 +18,22 @@
   .cert .n{color:#fbbf24}.std .n{color:#cbd5e1}
   .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px}
   .toolbar h2{font-size:16px;margin:0;color:#c7d2fe}
+  .höger{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .pill{font-size:12px;padding:4px 12px;border-radius:99px;border:1px solid}
   .live{color:#34d399;background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3)}
   .demo{color:#fbbf24;background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.35)}
   .banner{display:none;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);color:#fcd34d;border-radius:12px;padding:12px 18px;margin-bottom:18px;font-size:13px}
+  .btn{cursor:pointer;border-radius:10px;padding:7px 16px;font-size:13px;font-weight:600;font-family:inherit;transition:.15s}
+  .btn-rod{background:rgba(248,113,113,.12);color:#f87171;border:1px solid rgba(248,113,113,.35)}
+  .btn-rod:hover{background:rgba(248,113,113,.25)}
+  .btn-gron{background:rgba(52,211,153,.15);color:#34d399;border:1px solid rgba(52,211,153,.4)}
+  .btn-gron:hover{background:rgba(52,211,153,.3)}
+  .btn-gra{background:#1c2941;color:#94a3b8;border:1px solid #2b3a58}
+  .btn-gra:hover{color:#e2e8f0}
+  .rensa-panel{display:none;background:#151e31;border:1px solid rgba(248,113,113,.35);border-radius:14px;padding:16px 20px;margin-bottom:18px}
+  .rensa-panel p{margin:0 0 10px;font-size:13px;color:#94a3b8}
+  .rensa-rad{display:flex;gap:10px;flex-wrap:wrap}
+  .rensa-panel input{flex:1;min-width:220px;background:#0b1220;border:1px solid #2b3a58;border-radius:10px;padding:8px 12px;color:#e2e8f0;font-family:inherit;font-size:13px}
   table{width:100%;border-collapse:collapse;background:#151e31;border:1px solid #24304a;border-radius:14px;overflow:hidden}
   th{background:#1c2941;padding:13px 14px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8}
   td{padding:13px 14px;border-top:1px solid #223049;font-size:14px;vertical-align:top}
@@ -34,8 +46,8 @@
   .certja{background:rgba(251,191,36,.16);color:#fbbf24;border:1px solid rgba(251,191,36,.4)}
   .certnej{background:rgba(148,163,184,.12);color:#94a3b8;border:1px solid rgba(148,163,184,.28)}
   .kw span{display:inline-block;background:#1c2941;border:1px solid #2b3a58;color:#a5b4fc;border-radius:8px;padding:2px 8px;font-size:12px;margin:1px 3px 1px 0}
-  td a{color:#818cf8;text-decoration:none;font-weight:600;font-size:13px;white-space:nowrap}
-  td a:hover{text-decoration:underline}
+  .mailbtn{display:inline-block;background:rgba(129,140,248,.12);border:1px solid rgba(129,140,248,.35);color:#818cf8;text-decoration:none;font-weight:600;font-size:12px;padding:6px 12px;border-radius:10px;white-space:nowrap;transition:.15s}
+  .mailbtn:hover{background:rgba(129,140,248,.28)}
   .time{color:#64748b;font-size:12px;white-space:nowrap}
   .tom{text-align:center;color:#94a3b8;padding:30px !important}
   footer{margin-top:22px;color:#475569;font-size:12px;text-align:center}
@@ -57,9 +69,21 @@
 
   <div class="banner" id="demoBanner">⚠️ <b>Demoläge</b> — kunde inte nå GitHub just nu (t.ex. API-gräns). Visar exempeldata så sidan alltid ser bra ut. Ladda om sidan om en stund.</div>
 
+  <div class="rensa-panel" id="rensaPanel">
+    <p>🗑 <b>Rensa alla ansökningar</b> — raderar alla JSON-filer i <code>data/</code> via GitHubs API. Klistra in en GitHub-token (classic, scope <code>repo</code>). Token sparas <b>endast i denna flik</b> — aldrig i koden eller repot.</p>
+    <div class="rensa-rad">
+      <input type="password" id="tokenFalt" placeholder="ghp_… (krävs första gången)">
+      <button class="btn btn-rod" id="rensaBekrafta">Rensa nu</button>
+      <button class="btn btn-gra" id="rensaAvbryt">Avbryt</button>
+    </div>
+  </div>
+
   <div class="toolbar">
     <h2>Inkomna ansökningar</h2>
-    <span class="pill live" id="status">● laddar…</span>
+    <div class="höger">
+      <span class="pill live" id="status">● laddar…</span>
+      <button class="btn btn-rod" id="rensaKnapp">🗑 Rensa alla</button>
+    </div>
   </div>
 
   <table>
@@ -104,7 +128,7 @@ function render(lista){
     const kw = String(a.certs||"").split(",").map(s=>s.trim()).filter(Boolean)
       .map(k=>`<span>${esc(k)}</span>`).join("");
     const lank = String(a.lank||"").startsWith("http")
-      ? `<a href="${esc(a.lank)}" target="_blank" rel="noopener">Öppna mejl →</a>` : "—";
+      ? `<a class="mailbtn" href="${esc(a.lank)}" target="_blank" rel="noopener">✉️ Öppna mejlet</a>` : "—";
     return `<tr class="${certifierad ? "stjarncert" : ""}">
       <td class="time">${esc(a.datum)}</td>
       <td class="from"><b>${esc((namn||a.fran||"").trim())}</b><span>${esc(mailRen)}</span></td>
@@ -152,8 +176,52 @@ async function hamta(){
   }
 }
 
+/* ====== Rensa-knappen: raderar alla JSON-filer via GitHubs API ====== */
+const panel = document.getElementById("rensaPanel");
+const tokenFalt = document.getElementById("tokenFalt");
+
+document.getElementById("rensaKnapp").addEventListener("click", () => {
+  panel.style.display = panel.style.display === "block" ? "none" : "block";
+});
+document.getElementById("rensaAvbryt").addEventListener("click", () => {
+  panel.style.display = "none";
+});
+document.getElementById("rensaBekrafta").addEventListener("click", async () => {
+  const token = tokenFalt.value.trim() || sessionStorage.getItem("lia_token") || "";
+  if(!token){ alert("Klistra in en GitHub-token först (ghp_…)"); return; }
+  if(!confirm("Radera ALLA ansökningar i data/-mappen? Detta skapar raderings-commits i repot.")) return;
+
+  const st = document.getElementById("status");
+  try{
+    sessionStorage.setItem("lia_token", token);
+    tokenFalt.value = "";
+    panel.style.display = "none";
+    const url = `https://api.github.com/repos/${CONFIG.user}/${CONFIG.repo}/contents/${CONFIG.mapp}`;
+    const res = await fetch(url, { headers: { "Accept":"application/vnd.github+json", "Authorization":"Bearer "+token } });
+    if(res.status === 404){ alert("Mappen data/ finns inte — inget att rensa!"); return; }
+    if(!res.ok){ throw new Error("Kunde inte lista filer (HTTP " + res.status + (res.status===401 ? " — fel token?" : "") + ")"); }
+    const filer = (await res.json()).filter(f => f.name.endsWith(".json"));
+    if(!filer.length){ alert("Inga ansökningar att rensa!"); return; }
+
+    let ok = 0, fel = 0;
+    for(let i = 0; i < filer.length; i++){
+      st.textContent = `🗑 Rensar ${i+1}/${filer.length}…`;
+      const r = await fetch(`${url}/${filer[i].name}`, {
+        method: "DELETE",
+        headers: { "Accept":"application/vnd.github+json", "Authorization":"Bearer "+token, "Content-Type":"application/json" },
+        body: JSON.stringify({ message: "Rensar ansökan: " + filer[i].name, sha: filer[i].sha, branch: "main" })
+      });
+      if(r.ok) ok++; else fel++;
+    }
+    alert(`Klart! ${ok} raderade` + (fel ? `, ${fel} misslyckades` : "") + ".");
+  } catch(e){
+    alert("Fel vid rensning: " + e.message);
+  }
+  hamta();
+});
+
 hamta();
 setInterval(hamta, 120000); /* auto-uppdatering varannan minut */
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a31a5d4b4b1e4eff',t:'MTc4NzgyNjI0NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
