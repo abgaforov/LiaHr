@@ -67,7 +67,7 @@
     <div class="stat std"><div class="n" id="sStd">–</div><div class="l">Standard</div></div>
   </div>
 
-  <div class="banner" id="demoBanner">⚠️ <b>Demoläge</b> — kunde inte nå GitHub just nu (t.ex. API-gräns). Visar exempeldata så sidan alltid ser bra ut. Ladda om sidan om en stund.</div>
+  <div class="banner" id="demoBanner">⚠️ <b>Demoläge</b> — sidan nådde GitHubs API-gräns (60 läsningar/timme utan token). <b>Klicka på 🗑 Rensa alla och klistra in din token</b> — den används sedan även för läsning (5 000/tim) och sidan visar riktiga data igen.</div>
 
   <div class="rensa-panel" id="rensaPanel">
     <p>🗑 <b>Rensa alla ansökningar</b> — raderar alla JSON-filer i <code>data/</code> via GitHubs API. Klistra in en GitHub-token (classic, scope <code>repo</code>). Token sparas <b>endast i denna flik</b> — aldrig i koden eller repot.</p>
@@ -158,8 +158,11 @@ function demolage(meddelande){
 
 async function hamta(){
   try{
+    const token = sessionStorage.getItem("lia_token") || "";
+    const headers = { "Accept": "application/vnd.github+json" };
+    if(token) headers["Authorization"] = "Bearer " + token; /* token höjer gränsen 60 → 5000/tim */
     const url = `https://api.github.com/repos/${CONFIG.user}/${CONFIG.repo}/contents/${CONFIG.mapp}`;
-    const res = await fetch(url, { headers: { "Accept": "application/vnd.github+json" } });
+    const res = await fetch(url, { headers });
     if(res.status === 404){ vanta(); return; } /* data/ finns än inte → Logic App har inte publicerat något ännu */
     if(!res.ok) throw new Error("GitHub API " + res.status);
     const filer = (await res.json()).filter(f => f.name.endsWith(".json"));
