@@ -60,7 +60,7 @@
     <div class="stat neg"><div class="n" id="sNeg">–</div><div class="l">Negativa</div></div>
   </div>
 
-  <div class="banner" id="demoBanner">⚠️ <b>Demoläge</b> — kunde inte hämta data från GitHub (inget repo kopplat, eller API-gräns nådd). Visar exempeldata så sidan alltid ser bra ut. Följ stegen i <i>github-webbsida-guide.md</i> för att koppla på riktigt.</div>
+  <div class="banner" id="demoBanner">⚠️ <b>Demoläge</b> — kunde inte nå GitHub just nu (t.ex. API-gräns). Visar exempeldata så sidan alltid ser bra ut. Ladda om sidan om en stund.</div>
 
   <div class="toolbar">
     <h2>Inkomna ansökningar</h2>
@@ -74,7 +74,7 @@
     <tbody id="rows"><tr><td colspan="7" class="tom">Hämtar ansökningar…</td></tr></tbody>
   </table>
 
-  <footer>Flow: <b>Outlook → AI Language → Excel + GitHub</b> (Logic App 1) · Sida: <b>GitHub Pages + GitHub API</b> · Uppdatera sidan för färsk data</footer>
+  <footer>Flow: <b>Outlook → AI Language → Excel + GitHub</b> (Logic App 1) · Sida: <b>GitHub Pages + GitHub API</b> · Uppdaterar sig själv varannan minut</footer>
 </div>
 
 <script>
@@ -102,7 +102,7 @@ function render(lista){
 
   const rows = document.getElementById("rows");
   if(!lista.length){
-    rows.innerHTML = '<tr><td colspan="7" class="tom">Inga ansökningar ännu — skicka ett mejl med "LIA" eller "Praktik"! 📧</td></tr>';
+    rows.innerHTML = '<tr><td colspan="7" class="tom">Inga ansökningar ännu — skicka ett mejl med "LIA" eller "Praktik"! 📧<br><small>Hamnar ett skickat mejl inte här: kolla att CONFIG-raden pekar på rätt repo och att Logic App-steg G4 är byggt.</small></td></tr>';
     return;
   }
   rows.innerHTML = lista.map(a => {
@@ -124,6 +124,15 @@ function render(lista){
   }).join("");
 }
 
+/* Grönt läge: kopplad men inga ansökningar än */
+function vanta(){
+  const st = document.getElementById("status");
+  st.className = "pill live";
+  st.textContent = "● live — väntar på första ansökan…";
+  render([]);
+}
+
+/* Gult läge: riktiga fel (t.ex. API-gräns) — visa exempeldata så sidan aldrig är tom */
 function demolage(meddelande){
   document.getElementById("demoBanner").style.display = "block";
   const st = document.getElementById("status");
@@ -135,14 +144,16 @@ async function hamta(){
   try{
     const url = `https://api.github.com/repos/${CONFIG.user}/${CONFIG.repo}/contents/${CONFIG.mapp}`;
     const res = await fetch(url, { headers: { "Accept": "application/vnd.github+json" } });
+    if(res.status === 404){ vanta(); return; } /* data/-mappen finns än inte → Logic App har inte publicerat något ännu */
     if(!res.ok) throw new Error("GitHub API " + res.status);
     const filer = (await res.json()).filter(f => f.name.endsWith(".json"));
     const ansokningar = await Promise.all(filer.map(async f => {
-      const r = await fetch(f.download_url);
+      const r = await fetch(f.download_url + "?t=" + Date.now());
       return r.json();
     }));
     const st = document.getElementById("status");
-    st.className = "pill live"; st.textContent = "● live — hämtat från GitHub";
+    st.className = "pill live";
+    st.textContent = filer.length ? "● live — " + filer.length + " ansökningar från GitHub" : "● live — kopplad till GitHub";
     render(ansokningar);
   } catch(e){
     demolage(e.message);
@@ -150,6 +161,7 @@ async function hamta(){
 }
 
 hamta();
+setInterval(hamta, 120000); /* auto-uppdatering varannan minut */
 </script>
 </body>
 </html>
