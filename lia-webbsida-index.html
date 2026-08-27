@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kandidatportalen — LIA-ansökningar</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0b1220;color:#e2e8f0;padding:40px 24px}
+  .wrap{max-width:1100px;margin:0 auto}
+  header{background:linear-gradient(135deg,#4338ca,#7c3aed 60%,#a855f7);border-radius:18px;padding:28px 32px;margin-bottom:24px;box-shadow:0 10px 30px rgba(124,58,237,.25)}
+  header h1{margin:0 0 6px;font-size:26px;color:#fff}
+  header p{margin:0;color:#e0e7ff;opacity:.85;font-size:14px}
+  .stats{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px}
+  .stat{flex:1;min-width:140px;background:#151e31;border:1px solid #24304a;border-radius:14px;padding:16px 20px}
+  .stat .n{font-size:28px;font-weight:700;color:#fff}
+  .stat .l{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-top:2px}
+  .pos .n{color:#34d399}.neu .n{color:#cbd5e1}.neg .n{color:#f87171}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px}
+  .toolbar h2{font-size:16px;margin:0;color:#c7d2fe}
+  .pill{font-size:12px;padding:4px 12px;border-radius:99px;border:1px solid}
+  .live{color:#34d399;background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3)}
+  .demo{color:#fbbf24;background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.35)}
+  .banner{display:none;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);color:#fcd34d;border-radius:12px;padding:12px 18px;margin-bottom:18px;font-size:13px}
+  table{width:100%;border-collapse:collapse;background:#151e31;border:1px solid #24304a;border-radius:14px;overflow:hidden}
+  th{background:#1c2941;padding:13px 14px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8}
+  td{padding:13px 14px;border-top:1px solid #223049;font-size:14px;vertical-align:top}
+  tr:hover td{background:rgba(129,140,248,.06)}
+  .from b{display:block;color:#fff}
+  .from span{color:#64748b;font-size:12px}
+  .subj{color:#cbd5e1;max-width:240px}
+  .badge{display:inline-block;padding:4px 11px;border-radius:99px;font-size:12px;font-weight:600}
+  .positive{background:rgba(52,211,153,.14);color:#34d399;border:1px solid rgba(52,211,153,.35)}
+  .neutral{background:rgba(148,163,184,.14);color:#cbd5e1;border:1px solid rgba(148,163,184,.3)}
+  .negative{background:rgba(248,113,113,.14);color:#f87171;border:1px solid rgba(248,113,113,.35)}
+  .mixed{background:rgba(251,191,36,.14);color:#fbbf24;border:1px solid rgba(251,191,36,.35)}
+  .prio{display:inline-block;padding:3px 10px;border-radius:8px;font-size:12px;font-weight:600}
+  .Hög{background:rgba(248,113,113,.15);color:#f87171}
+  .Normal{background:rgba(148,163,184,.12);color:#94a3b8}
+  .kw span{display:inline-block;background:#1c2941;border:1px solid #2b3a58;color:#a5b4fc;border-radius:8px;padding:2px 8px;font-size:12px;margin:1px 3px 1px 0}
+  td a{color:#818cf8;text-decoration:none;font-weight:600;font-size:13px;white-space:nowrap}
+  td a:hover{text-decoration:underline}
+  .time{color:#64748b;font-size:12px;white-space:nowrap}
+  .tom{text-align:center;color:#94a3b8;padding:30px !important}
+  footer{margin-top:22px;color:#475569;font-size:12px;text-align:center}
+  footer b{color:#64748b}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎓 Kandidatportalen — LIA-ansökningar</h1>
+    <p>HR-avdelningen · Webbsida hostad på GitHub Pages · Data publiceras automatiskt av Azure Logic App</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="n" id="sTot">–</div><div class="l">Totalt</div></div>
+    <div class="stat pos"><div class="n" id="sPos">–</div><div class="l">Positiva</div></div>
+    <div class="stat neu"><div class="n" id="sNeu">–</div><div class="l">Neutrala</div></div>
+    <div class="stat neg"><div class="n" id="sNeg">–</div><div class="l">Negativa</div></div>
+  </div>
+
+  <div class="banner" id="demoBanner">⚠️ <b>Demoläge</b> — kunde inte hämta data från GitHub (inget repo kopplat, eller API-gräns nådd). Visar exempeldata så sidan alltid ser bra ut. Följ stegen i <i>github-webbsida-guide.md</i> för att koppla på riktigt.</div>
+
+  <div class="toolbar">
+    <h2>Inkomna ansökningar</h2>
+    <span class="pill live" id="status">● laddar…</span>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th>Mottaget</th><th>Från</th><th>Ämne</th><th>Sentiment</th><th>Prioritet</th><th>Nyckelord (AI)</th><th>Mejl</th>
+    </tr></thead>
+    <tbody id="rows"><tr><td colspan="7" class="tom">Hämtar ansökningar…</td></tr></tbody>
+  </table>
+
+  <footer>Flow: <b>Outlook → AI Language → Excel + GitHub</b> (Logic App 1) · Sida: <b>GitHub Pages + GitHub API</b> · Uppdatera sidan för färsk data</footer>
+</div>
+
+<script>
+/* ====== ÄNDRA HÄR: ditt GitHub-användarnamn och reponamn ====== */
+const CONFIG = { user: "abgaforov", repo: "lia-ansokningar", mapp: "data" };
+
+const DEMO = [
+  {datum:"2026-08-27 09:14", fran:"Anna Lindqvist <anna.lindqvist@mail.se>", amne:"LIA-ansökan — söker praktik HT26", sentiment:"positive", prioritet:"Normal", nyckelord:"java, sql, engelska", lank:""},
+  {datum:"2026-08-27 08:52", fran:"Mehmet Yilmaz <mehmet.y@outlook.com>", amne:"Praktikplats lärande i arbete", sentiment:"positive", prioritet:"Normal", nyckelord:"frontend, react, b-körkort", lank:""},
+  {datum:"2026-08-26 16:40", fran:"Sara Berg <sara.berg@icloud.com>", amne:"Återbud — måste tyvärr dra mig från LIA", sentiment:"negative", prioritet:"Hög", nyckelord:"återbud, sjukdom, praktik", lank:""},
+  {datum:"2026-08-26 11:03", fran:"Johan Karlsson <johan.karlsson@gmail.com>", amne:"Ansökan LIA-period 2", sentiment:"neutral", prioritet:"Normal", nyckelord:"crm, excel, försäljning", lank:""},
+  {datum:"2026-08-25 14:27", fran:"Fatima Hassan <fatima.h@live.se>", amne:"Söker LIA inom IT-support", sentiment:"positive", prioritet:"Normal", nyckelord:"it-support, windows, servicedesk", lank:""},
+  {datum:"2026-08-25 09:58", fran:"Erik Nilsson <erik.nilsson@proton.me>", amne:"Frågor angående praktikplats", sentiment:"neutral", prioritet:"Normal", nyckelord:"frågor, praktik, schema", lank:""}
+];
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function render(lista){
+  lista.sort((a,b) => (b.datum||"").localeCompare(a.datum||""));
+  const rakna = s => lista.filter(x => x.sentiment === s).length;
+  document.getElementById("sTot").textContent = lista.length;
+  document.getElementById("sPos").textContent = rakna("positive");
+  document.getElementById("sNeu").textContent = rakna("neutral");
+  document.getElementById("sNeg").textContent = rakna("negative") + rakna("mixed");
+
+  const rows = document.getElementById("rows");
+  if(!lista.length){
+    rows.innerHTML = '<tr><td colspan="7" class="tom">Inga ansökningar ännu — skicka ett mejl med "LIA" eller "Praktik"! 📧</td></tr>';
+    return;
+  }
+  rows.innerHTML = lista.map(a => {
+    const [namn, mail] = String(a.fran||"").split("<");
+    const mailRen = (mail||"").replace(">","").trim();
+    const kw = String(a.nyckelord||"").split(",").map(s=>s.trim()).filter(Boolean)
+      .map(k=>`<span>${esc(k)}</span>`).join("");
+    const lank = String(a.lank||"").startsWith("http")
+      ? `<a href="${esc(a.lank)}" target="_blank" rel="noopener">Öppna mejl →</a>` : "—";
+    return `<tr>
+      <td class="time">${esc(a.datum)}</td>
+      <td class="from"><b>${esc((namn||a.fran||"").trim())}</b><span>${esc(mailRen)}</span></td>
+      <td class="subj">${esc(a.amne)}</td>
+      <td><span class="badge ${esc(a.sentiment)}">${esc(a.sentiment)}</span></td>
+      <td><span class="prio ${esc(a.prioritet)}">${esc(a.prioritet)}</span></td>
+      <td class="kw">${kw || "—"}</td>
+      <td>${lank}</td>
+    </tr>`;
+  }).join("");
+}
+
+function demolage(meddelande){
+  document.getElementById("demoBanner").style.display = "block";
+  const st = document.getElementById("status");
+  st.className = "pill demo"; st.textContent = "⚠ demoläge — exempeldata";
+  render(DEMO);
+}
+
+async function hamta(){
+  try{
+    const url = `https://api.github.com/repos/${CONFIG.user}/${CONFIG.repo}/contents/${CONFIG.mapp}`;
+    const res = await fetch(url, { headers: { "Accept": "application/vnd.github+json" } });
+    if(!res.ok) throw new Error("GitHub API " + res.status);
+    const filer = (await res.json()).filter(f => f.name.endsWith(".json"));
+    const ansokningar = await Promise.all(filer.map(async f => {
+      const r = await fetch(f.download_url);
+      return r.json();
+    }));
+    const st = document.getElementById("status");
+    st.className = "pill live"; st.textContent = "● live — hämtat från GitHub";
+    render(ansokningar);
+  } catch(e){
+    demolage(e.message);
+  }
+}
+
+hamta();
+</script>
+</body>
+</html>
